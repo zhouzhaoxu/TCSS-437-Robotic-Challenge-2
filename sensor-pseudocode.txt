@@ -1,0 +1,35 @@
+leftAverage
+rightAverage
+previousAverage
+
+if (abs(leftAverage - grey) < abs(rightAverage - grey)) {
+    //Prioritize left
+    if(currentReading > previousAverage)
+        //Going off-track
+        if (rightAverage > grey)
+            //right is on black
+            turnRight
+        else
+            turnLeft
+    else
+        //Going too far on-track
+        if (rightAverage > grey)
+            turnLeft
+        else
+            turnRight
+
+else
+    //Prioritize right
+    if (currentReading > previousAverage)
+        //Going off-track
+        if (leftAverage > grey)
+            //left is on black
+            turnLeft
+        else
+            turnRight
+    else
+        //Going too far on-track
+        if (leftAverage . grey)
+            turnRight
+        else
+            turnLeft
