@@ -12,7 +12,7 @@
 //How close the robot needs to be for an obstacle to be detected.
 #define MAX_DISTANCE 90
 //How close the robot should get to an obstacle in cm
-#define MIN_DISTANCE 4
+#define MIN_DISTANCE 2
 //A value used to specify that no obstacles are currently detected.
 #define OUT_OF_BOUNDS 255
 //The slope used in the linear equation to calculate the robot's speed based on
@@ -22,7 +22,7 @@
 #define DETECT_BUFFER_TIME 100
 
 //How long the robot should stop before reversing from an obstacle.
-#define RETREAT_STOP_TIME 3000
+#define RETREAT_STOP_TIME 2000
 //How long the robot should reverse from the obstacle.
 #define RETREAT_REVERSE_TIME 1000
 //How long the robot should turn from the obstacle.
@@ -62,6 +62,7 @@ int leftPreviousAverage = 0;
 int rightPreviousAverage = 0;
 int speedLeft = 10;
 int speedRight = 20;
+int followedLineLast = 0;
 
 task main() {
 	int motorSpeed = 0;
@@ -74,8 +75,9 @@ task main() {
 	setMotorSpeed(motorLeft, DEFAULT_SPEED);
 	setMotorSpeed(motorRight, DEFAULT_SPEED);
 	while (true) {
-		if(0) {
-		//if (distanceFrom < MAX_DISTANCE) {
+		//if(0) {
+		if (distanceFrom < MAX_DISTANCE) {
+			followedLineLast = 0;
 			if (distanceFrom <= MIN_DISTANCE) {
 				retreatFromObstacle();
 		  } else {
@@ -85,25 +87,30 @@ task main() {
 		  }
 		  nextWanderTime = 0;
 		//} else if(leftLight < dark) {
-		} else if (leftAverage <= 17 || rightAverage <= 17) {
-		
-  		if ((int) nSysTime - lastFollowTime > 1500) {
+		} else if (leftAverage <= 15 || rightAverage <= 15) {
+
+  		if ((int) nSysTime - lastFollowTime > 1000) {
   			wait1Msec(250);
   	  }
-  		if(leftAverage <= 17 || rightAverage <= 17) {
+  		if(leftAverage <= 15 || rightAverage <= 15) {
+  			followedLineLast = 1;
   			if ((int) nSysTime - lastFollowTime > FOLLOW_WINDOW) {
-  				setMotorSpeed(motorLeft, -5);
-			  	setMotorSpeed(motorRight, -5);
+  				setMotorSpeed(motorLeft, -35);
+			  	setMotorSpeed(motorRight, -35);
 			  	wait1Msec(250);
   			}
 				setLEDColor(ledGreen);
 				//followLine();
 				followLine2();
 				lastFollowTime = nSysTime;
-				
+
 			}
 	  } else if ((int) nSysTime > nextWanderTime) {
 	  	if ((int) nSysTime - lastFollowTime > FOLLOW_WINDOW) {
+	  		if (followedLineLast) {
+	  			playSound(soundBeepBeep);
+	  			followedLineLast = 0;
+	  		}
 	  		setLEDColor(ledRed);
 	     	directionDistro = randomBiasedWalk(directionDistro);
 	      nextWanderTime = nSysTime + (random[MAX_WANDER_TIME - MIN_WANDER_TIME] + MIN_WANDER_TIME);
