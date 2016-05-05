@@ -16,7 +16,7 @@
 //How close the robot needs to be for an obstacle to be detected.
 #define MAX_DISTANCE 90
 //How close the robot should get to an obstacle in cm
-#define MIN_DISTANCE 2
+#define MIN_DISTANCE 3
 //A value used to specify that no obstacles are currently detected.
 #define OUT_OF_BOUNDS 255
 //The slope used in the linear equation to calculate the robot's speed based on
@@ -25,7 +25,7 @@
 //The maximum time allowed between two successive sonar signals for it to be considered valid.
 #define DETECT_BUFFER_TIME 100
 //How long the robot should stop before reversing from an obstacle.
-#define RETREAT_STOP_TIME 2000
+#define RETREAT_STOP_TIME 1500
 //How long the robot should reverse from the obstacle.
 #define RETREAT_REVERSE_TIME 1000
 //How long the robot should turn from the obstacle.
@@ -273,7 +273,6 @@ void retreatFromObstacle(void) {
 	sleep(RETREAT_STOP_TIME);
 
   setSpeed(-1 * DEFAULT_REVERSE_SPEED, -1 * DEFAULT_REVERSE_SPEED);
-
 	sleep(RETREAT_REVERSE_TIME);
 
 	int direction = random[2];
