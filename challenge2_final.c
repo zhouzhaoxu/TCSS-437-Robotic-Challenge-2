@@ -12,7 +12,7 @@
 //How close the robot needs to be for an obstacle to be detected.
 #define MAX_DISTANCE 90
 //How close the robot should get to an obstacle in cm
-#define MIN_DISTANCE 2
+#define MIN_DISTANCE 3
 //A value used to specify that no obstacles are currently detected.
 #define OUT_OF_BOUNDS 255
 //The slope used in the linear equation to calculate the robot's speed based on
@@ -22,7 +22,7 @@
 #define DETECT_BUFFER_TIME 100
 
 //How long the robot should stop before reversing from an obstacle.
-#define RETREAT_STOP_TIME 2000
+#define RETREAT_STOP_TIME 1500
 //How long the robot should reverse from the obstacle.
 #define RETREAT_REVERSE_TIME 1000
 //How long the robot should turn from the obstacle.
@@ -38,7 +38,7 @@
 #define MIN_WANDER_TIME 500
 //
 #define MAX_WANDER_TIME 1500
-
+// Using for detecting if the robot detect the line while wandering
 #define FOLLOW_WINDOW 500
 
 task sonarTask();
@@ -46,13 +46,13 @@ task lightTask();
 void retreatFromObstacle(void);
 int getSpeedFromDistance(int distance);
 int randomBiasedWalk(int directionDistro);
-void followLine2();
+void followLine();
 void setSpeed(tMotor left, tMotor right, int velocity_left, int velocity_right);
 
 //sonar
 int distanceFrom = OUT_OF_BOUNDS;
 //light
-float nPfactor = 0.3;
+float nPfactor = 0.3; 
 int grey = 10;
 int leftAverage = 0;
 int rightAverage = 0;
@@ -70,94 +70,95 @@ task main() {
 
 	startTask(sonarTask);
 	startTask(lightTask);
-	setMotorSpeed(motorLeft, DEFAULT_SPEED);
-	setMotorSpeed(motorRight, DEFAULT_SPEED);
+	setSpeed(motorLeft, motorRight, DEFAULT_SPEED, DEFAULT_SPEED);
 	while (true) {
-		//if(0) {
+		// sonar task
 		if (distanceFrom < MAX_DISTANCE) {
 			followedLineLast = 0;
 			if (distanceFrom <= MIN_DISTANCE) {
 				retreatFromObstacle();
-		  } else {
-		    motorSpeed = getSpeedFromDistance(distanceFrom);
-        setSpeed(motorLeft, motorRight, motorSpeed, motorSpeed);
-		  }
+		  	} else {
+		    	motorSpeed = getSpeedFromDistance(distanceFrom);
+        		setSpeed(motorLeft, motorRight, motorSpeed, motorSpeed);
+		  	}
 		  nextWanderTime = 0;
-		//} else if(leftLight < dark) {
-		} else if (leftAverage <= 15 || rightAverage <= 15) {
+		} 
+		// following the line when detect when of the light sensor is black
+		else if (leftAverage <= 15 || rightAverage <= 15) {
 
-  		if ((int) nSysTime - lastFollowTime > 1000) {
-  			wait1Msec(250);
-  	  }
-  		if(leftAverage <= 15 || rightAverage <= 15) {
-  			followedLineLast = 1;
-  			if ((int) nSysTime - lastFollowTime > FOLLOW_WINDOW) {
-          setSpeed(motorLeft, motorRight, -35, -35);
-			  	wait1Msec(250);
-  			}
-				setLEDColor(ledGreen);
-				followLine2();
+  			if ((int) nSysTime - lastFollowTime > 1000) {
+  				wait1Msec(250);
+  	  		}
+  	  		else {
+	  			followedLineLast = 1;
+	  			if ((int) nSysTime - lastFollowTime > FOLLOW_WINDOW) {
+	        		setSpeed(motorLeft, motorRight, -35, -35);
+				  	wait1Msec(250);}
+	  			// indicate it is following the line
+				//setLEDColor(ledGreen);
+				followLine();
 				lastFollowTime = nSysTime;
-
 			}
-	  } else if ((int) nSysTime > nextWanderTime) {
+	  } 
+	// wandering section
+	else if ((int) nSysTime > nextWanderTime) {
 	  	if ((int) nSysTime - lastFollowTime > FOLLOW_WINDOW) {
 	  		if (followedLineLast) {
 	  			playSound(soundBeepBeep);
 	  			followedLineLast = 0;
 	  		}
-	  		setLEDColor(ledRed);
-	     	directionDistro = randomBiasedWalk(directionDistro);
-	      nextWanderTime = nSysTime + (random[MAX_WANDER_TIME - MIN_WANDER_TIME] + MIN_WANDER_TIME);
+	  		// indicate it is wandering
+	  		//setLEDColor(ledRed);
+	    	directionDistro = randomBiasedWalk(directionDistro);
+	    	nextWanderTime = nSysTime + (random[MAX_WANDER_TIME - MIN_WANDER_TIME] + MIN_WANDER_TIME);
 	    }
 	  }
   }
 }
 
-void followLine2() {
-	speedLeft = (abs(grey - leftAverage) / 1.2) * (abs(grey - leftAverage) / 1.2) + 10;
-	speedRight = (abs(grey - rightAverage) / 1.2) * (abs(grey - rightAverage) / 1.2) + 10;
+void followLine() {
+	speedLeft = pow((abs(grey - leftAverage) / 1.2),2) + 10;
+	speedRight = pow((abs(grey - rightAverage) / 1.2),2) + 10;
 	if (abs(leftAverage - grey) < abs(rightAverage - grey)) {
     //Prioritize left
-	  displayBigTextLine(9, "Left on line");
-    if(leftAverage > leftPreviousAverage) {
-        //Going off-track
-        if (rightAverage > grey) {
-            //right is on white
-            setSpeed(motorLeft, motorRight, 10, speedRight);
-      	} else {
-            setSpeed(motorLeft, motorRight, speedLeft * 1.1, 10);
-      		}
-  } else {
-        //Going too far on-track
-        if (rightAverage > grey) {
-            setSpeed(motorLeft, motorRight, 10, speedRight);
-      	} else {
-      	//both on black
-            setSpeed(motorLeft, motorRight, speedLeft, 25);
-        }
-    }
+	    if(leftAverage > leftPreviousAverage) {
+	        //Going off-track
+	        if (rightAverage > grey) {
+	            //right is on white
+	            setSpeed(motorLeft, motorRight, 10, speedRight);
+	      	} else {
+	            setSpeed(motorLeft, motorRight, speedLeft * 1.1, 10);
+	  		}
+	  	} else {
+	        //Going too far on-track
+	        if (rightAverage > grey) {
+	            setSpeed(motorLeft, motorRight, 10, speedRight);
+	      	} else {
+	      		//both on black
+	            setSpeed(motorLeft, motorRight, speedLeft, 25);
+	        }
+	    }
 
 	} else {
-    //Prioritize right
-    if (rightAverage > rightPreviousAverage) {
-        //Going off-track
-        if (leftAverage > grey) {
-            //left is on white
-            setSpeed(motorLeft, motorRight, speedLeft, 10);
-       	} else {
-            setSpeed(motorLeft, motorRight, 10, speedRight * 1.1);
-        }
-  	} else {
-        //Going too far on-track
-        if (leftAverage > grey) {
-            setSpeed(motorLeft, motorRight, speedLeft, 25);
-       	} else {
-       	//both on black
-            setSpeed(motorLeft, motorRight, 25, speedRight);
-        }
-    }
-  }
+	    //Prioritize right
+	    if (rightAverage > rightPreviousAverage) {
+	        //Going off-track
+	        if (leftAverage > grey) {
+	            //left is on white
+	            setSpeed(motorLeft, motorRight, speedLeft, 10);
+	       	} else {
+	            setSpeed(motorLeft, motorRight, 10, speedRight * 1.1);
+	        }
+	  	} else {
+	        //Going too far on-track
+	        if (leftAverage > grey) {
+	            setSpeed(motorLeft, motorRight, speedLeft, 25);
+	       	} else {
+	       		//both on black
+	            setSpeed(motorLeft, motorRight, 25, speedRight);
+	        }
+	    }
+  	}
 }
 
 //Calculate the speed, from 100 to 0, based on the robot's distance
@@ -173,19 +174,19 @@ void retreatFromObstacle(void) {
 	setSpeed(motorLeft, motorRight, 0, 0);
 	sleep(RETREAT_STOP_TIME);
 
-  setSpeed(motorLeft, motorRight, -1 * DEFAULT_REVERSE_SPEED, -1 * DEFAULT_REVERSE_SPEED);
+	setSpeed(motorLeft, motorRight, -1 * DEFAULT_REVERSE_SPEED, -1 * DEFAULT_REVERSE_SPEED);
 
 	sleep(RETREAT_REVERSE_TIME);
 
 	int direction = random[2];
 	if (direction) {
 		//Turn left
-    setSpeed(motorLeft, motorRight, DEFAULT_REVERSE_SPEED, -1 * DEFAULT_REVERSE_SPEED);
+    	setSpeed(motorLeft, motorRight, DEFAULT_REVERSE_SPEED, -1 * DEFAULT_REVERSE_SPEED);
 		sleep(RETREAT_TURN_TIME);
   } else {
     //Turn right
     setSpeed(motorLeft, motorRight, -1 * DEFAULT_REVERSE_SPEED, DEFAULT_REVERSE_SPEED);
-		sleep(RETREAT_TURN_TIME);
+	sleep(RETREAT_TURN_TIME);
   }
 }
 
@@ -216,7 +217,6 @@ task sonarTask() {
     } else {
       distanceFrom = OUT_OF_BOUNDS;
     }
-    //displayBigTextLine(4, "Dist: %3d cm", distanceFrom);
   }
 
 }
@@ -224,19 +224,17 @@ task sonarTask() {
 task lightTask() {
 	while (true) {
 		int color = SensorValue[colourleft];
-	  int color2 = SensorValue[colourright];
-	  displayBigTextLine(3, "Light1: %3d", color);
-	  displayBigTextLine(6, "Light2: %3d", color2);
-	  leftAverage = color + nPfactor * (leftPreviousAverage - color);
-	  rightAverage = color2 + nPfactor * (rightPreviousAverage - color2);
-	  leftPreviousAverage = leftAverage;
-	  rightPreviousAverage = rightAverage;
-	  wait1Msec(50);
-  }
+		int color2 = SensorValue[colourright];
+		leftAverage = color + nPfactor * (leftPreviousAverage - color);
+		rightAverage = color2 + nPfactor * (rightPreviousAverage - color2);
+		leftPreviousAverage = leftAverage;
+		rightPreviousAverage = rightAverage;
+		wait1Msec(50);
+  	}
 }
 
 // Moves the robot at specified speed
 void setSpeed(tMotor left, tMotor right, int velocity_left, int velocity_right) {
-  setMotorSpeed(left, velocity_left);
-  setMotorSpeed(right, velocity_right);
+	setMotorSpeed(left, velocity_left);
+	setMotorSpeed(right, velocity_right);
 }
