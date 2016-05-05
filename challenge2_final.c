@@ -124,45 +124,36 @@ void followLine2() {
         //Going off-track
         if (rightAverage > grey) {
             //right is on white
-            displayBigTextLine(12, "Turn Left");
             setSpeed(motorLeft, motorRight, 10, speedRight);
       	} else {
-      			displayBigTextLine(12, "Turn Right");
             setSpeed(motorLeft, motorRight, speedLeft * 1.1, 10);
-  			}
-  	} else {
+      		}
+  } else {
         //Going too far on-track
         if (rightAverage > grey) {
-        		displayBigTextLine(12, "Turn Right");
             setSpeed(motorLeft, motorRight, 10, speedRight);
       	} else {
-      			displayBigTextLine(12, "Turn Left");
-      			//both on black
+      	//both on black
             setSpeed(motorLeft, motorRight, speedLeft, 25);
         }
     }
 
 	} else {
     //Prioritize right
-	  displayBigTextLine(9, "Right on line");
     if (rightAverage > rightPreviousAverage) {
         //Going off-track
         if (leftAverage > grey) {
             //left is on white
-        		displayBigTextLine(12, "Turn Right");
             setSpeed(motorLeft, motorRight, speedLeft, 10);
        	} else {
-       			displayBigTextLine(12, "Turn Left");
             setSpeed(motorLeft, motorRight, 10, speedRight * 1.1);
         }
   	} else {
         //Going too far on-track
         if (leftAverage > grey) {
-        		displayBigTextLine(12, "Turn Left");
             setSpeed(motorLeft, motorRight, speedLeft, 25);
        	} else {
-       			displayBigTextLine(12, "Turn Right");
-       			//both on black
+       	//both on black
             setSpeed(motorLeft, motorRight, 25, speedRight);
         }
     }
