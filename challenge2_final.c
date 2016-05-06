@@ -117,6 +117,8 @@ int leftAverage = 0;
 int rightAverage = 0;
 int leftPreviousAverage = 0;
 int rightPreviousAverage = 0;
+int speedLeft = 10;
+int speedRight = 20;
 
 /* The robot's current distance from the nearest obstacle. */
 int distanceFrom = OUT_OF_BOUNDS;
@@ -199,8 +201,8 @@ task main() {
 
 void followLine() {
   //Determine the speed of the prioritized motor depending on how close it is to grey.
-	speedLeft = (abs(GREY - leftAverage) / COLOR_COEFFICIENT) * (abs(GREY - leftAverage) / COLOR_COEFFICIENT) + BASE_FOLLOW_SPEED;
-	speedRight = (abs(GREY - rightAverage) / COLOR_COEFFICIENT) * (abs(GREY - rightAverage) / COLOR_COEFFICIENT) + BASE_FOLLOW_SPEED;
+	speedLeft = pow((abs(GREY - leftAverage) / COLOR_COEFFICIENT),2) + BASE_FOLLOW_SPEED;
+	speedRight = pow((abs(GREY - rightAverage) / COLOR_COEFFICIENT),2) + BASE_FOLLOW_SPEED;
 
   /*
    * Check to see which sensor is closer to grey, and prioritize that one.
