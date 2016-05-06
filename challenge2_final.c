@@ -125,84 +125,84 @@ int distanceFrom = OUT_OF_BOUNDS;
 
 task main() {
   int followingLine = 0;
-	int motorSpeed = 0;
+  int motorSpeed = 0;
   //A rolling average of how much the robot has tended to veer
-   //left or right while wandering.
-	int directionDistro = 0;
-	int nextWanderTime = 0;
-   //The system time when we were last following a line.
-	int lastFollowTime = 0;
-
-	startTask(sonarTask);
-	startTask(lightTask);
+  //left or right while wandering.
+  int directionDistro = 0;
+  int nextWanderTime = 0;
+  //The system time when we were last following a line.
+  int lastFollowTime = 0;
+  
+  startTask(sonarTask);
+  startTask(lightTask);
   setSpeed(DEFAULT_SPEED, DEFAULT_SPEED);
-
-	while (true) {
+  
+  while (true) {
     /*
      * Upon each loop cycle, the robot determines if it has detected
      * an obstacle, detected a line, or should default to wandering, 
      * in that order.
      */
-
-		if (distanceFrom < MAX_DISTANCE) {
-        //Object detected. Stop following line or wandering.
-        //Approach the obstacle until we get close enough, then retreat.
-	  		followingLine = 0;
-        nextWanderTime = 0;
-
-		  if (distanceFrom <= MIN_DISTANCE) {
-				retreatFromObstacle();
-		  } else {
-		    motorSpeed = getSpeedFromDistance(distanceFrom);
+     
+     if (distanceFrom < MAX_DISTANCE) {
+       //Object detected. Stop following line or wandering.
+       //Approach the obstacle until we get close enough, then retreat.
+       followingLine = 0;
+       nextWanderTime = 0;
+       
+       if (distanceFrom <= MIN_DISTANCE) {
+         retreatFromObstacle();
+       } else {
+       	motorSpeed = getSpeedFromDistance(distanceFrom);
         setSpeed(motorSpeed, motorSpeed);
-		  }
-		    
-		} else if (leftAverage <= WHITE_GREY_LIMIT || rightAverage <= WHITE_GREY_LIMIT) {
-      //Line detected. Either continue following it or stop wandering.
+       	
+       }
+   
+     } else if (leftAverage <= WHITE_GREY_LIMIT || rightAverage <= WHITE_GREY_LIMIT) {
+       //Line detected. Either continue following it or stop wandering.
 
-      //If the robot was not just following a line, give it a window of time
-      //to determine if it really is or isn't.
-  		if (!followingLine) {
-  		  wait1Msec(FOLLOW_DELAY);
-  	  }
-
-  		if(leftAverage <= WHITE_GREY_LIMIT || rightAverage <= WHITE_GREY_LIMIT) {
-        //Line confirmed.
-  			if (!followingLine) {
-          //If the robot is starting to follow the line, reverse for a moment to help
-          //begin following.
-          setSpeed(-1 * REVERSE_FOLLOW_SPEED, -1 * REVERSE_FOLLOW_SPEED);
-			    wait1Msec(FOLLOW_DELAY);
-  			}
-  		  followingLine = 1;
-				setLEDColor(ledGreen);
-
-				followLine();
-				lastFollowTime = nSysTime;
-			}
-
-	  } else if ((int) nSysTime > nextWanderTime) {
-      //No obstacle or line detected. Wander.
-	  	if ((int) nSysTime - lastFollowTime > FOLLOW_WINDOW) {
-        //Beep to indicate that we are finished following a line.
-        //Surround with a small bumper to avoid erroneous line reading errors.
-	  		if (followingLine) {
-	  			playSound(soundBeepBeep);
-	  			followingLine = 0;
-	  		}
-	  		setLEDColor(ledRed);
-
-	     	directionDistro = randomBiasedWalk(directionDistro);
-	      nextWanderTime = nSysTime + (random[MAX_WANDER_TIME - MIN_WANDER_TIME] + MIN_WANDER_TIME);
-	    }
-	  }
+       //If the robot was not just following a line, give it a window of time
+       //to determine if it really is or isn't.
+       if (!followingLine) {
+       	 wait1Msec(FOLLOW_DELAY);
+       }
+       
+       if(leftAverage <= WHITE_GREY_LIMIT || rightAverage <= WHITE_GREY_LIMIT) {
+          //Line confirmed.
+          if (!followingLine) {
+            //If the robot is starting to follow the line, reverse for a moment to help
+            //begin following.
+            setSpeed(-1 * REVERSE_FOLLOW_SPEED, -1 * REVERSE_FOLLOW_SPEED);
+            wait1Msec(FOLLOW_DELAY);
+          }
+          followingLine = 1;
+          setLEDColor(ledGreen);
+          followLine();
+          lastFollowTime = nSysTime;
+        }
+     	
+     } else if ((int) nSysTime > nextWanderTime) {
+       //No obstacle or line detected. Wander.
+       if ((int) nSysTime - lastFollowTime > FOLLOW_WINDOW) {
+       //Beep to indicate that we are finished following a line.
+       //Surround with a small bumper to avoid erroneous line reading errors.
+         if (followingLine) {
+       	   playSound(soundBeepBeep);
+       	   followingLine = 0;
+         }
+         setLEDColor(ledRed);
+         directionDistro = randomBiasedWalk(directionDistro);
+         nextWanderTime = nSysTime + (random[MAX_WANDER_TIME - MIN_WANDER_TIME] + MIN_WANDER_TIME);
+       }
+     	
+     }
   }
 }
 
 void followLine() {
   //Determine the speed of the prioritized motor depending on how close it is to grey.
-	speedLeft = pow((abs(GREY - leftAverage) / COLOR_COEFFICIENT),2) + BASE_FOLLOW_SPEED;
-	speedRight = pow((abs(GREY - rightAverage) / COLOR_COEFFICIENT),2) + BASE_FOLLOW_SPEED;
+  speedLeft = pow((abs(GREY - leftAverage) / COLOR_COEFFICIENT),2) + BASE_FOLLOW_SPEED;
+  speedRight = pow((abs(GREY - rightAverage) / COLOR_COEFFICIENT),2) + BASE_FOLLOW_SPEED;
 
   /*
    * Check to see which sensor is closer to grey, and prioritize that one.
@@ -217,33 +217,34 @@ void followLine() {
    * keep it as much on the line as possible.
    *
    */
-
-	if (abs(leftAverage - GREY) < abs(rightAverage - GREY)) {
-    //Prioritize left
-	  displayBigTextLine(9, "Left on line");
-    if(leftAverage > leftPreviousAverage) {
-        //Going off-track
-        if (rightAverage > GREY) {
-            //right is on white
-            setSpeed(BASE_FOLLOW_SPEED, speedRight);
-      	} else {
-            setSpeed(speedLeft * ON_BLACK_MULTIPLIER, BASE_FOLLOW_SPEED);
-      		}
-  } else {
-        //Going too far on-track
-        if (rightAverage > GREY) {
-            setSpeed(BASE_FOLLOW_SPEED, speedRight);
-      	} else {
-      	//both on black
-            setSpeed(speedLeft, BASE_FOLLOW_SPEED + ON_BLACK_OFFSET);
-        }
+   
+   if (abs(leftAverage - GREY) < abs(rightAverage - GREY)) {
+     //Prioritize left
+     displayBigTextLine(9, "Left on line");
+     if(leftAverage > leftPreviousAverage) {
+     	
+       //Going off-track
+       if (rightAverage > GREY) {
+       	 //right is on white
+       	 setSpeed(BASE_FOLLOW_SPEED, speedRight);
+       } else {
+       	 setSpeed(speedLeft * ON_BLACK_MULTIPLIER, BASE_FOLLOW_SPEED);
+       }
+    } else {
+      //Going too far on-track
+      if (rightAverage > GREY) {
+        setSpeed(BASE_FOLLOW_SPEED, speedRight);
+      } else {
+        //both on black
+        setSpeed(speedLeft, BASE_FOLLOW_SPEED + ON_BLACK_OFFSET);
+      }
     }
-
-	} else {
-    //Prioritize right
-    if (rightAverage > rightPreviousAverage) {
-        //Going off-track
-        if (leftAverage > GREY) {
+   	
+   } else {
+     //Prioritize right
+     if (rightAverage > rightPreviousAverage) {
+       //Going off-track
+       if (leftAverage > GREY) {
             //left is on white
             setSpeed(speedLeft, BASE_FOLLOW_SPEED);
        	} else {
@@ -273,20 +274,19 @@ int getSpeedFromDistance(int distance) {
 void retreatFromObstacle(void) {
 	setSpeed(0, 0);
 	sleep(RETREAT_STOP_TIME);
-
-  setSpeed(-1 * DEFAULT_REVERSE_SPEED, -1 * DEFAULT_REVERSE_SPEED);
+	setSpeed(-1 * DEFAULT_REVERSE_SPEED, -1 * DEFAULT_REVERSE_SPEED);
 	sleep(RETREAT_REVERSE_TIME);
 
 	int direction = random[2];
 	if (direction) {
 		//Turn left
-    setSpeed(DEFAULT_REVERSE_SPEED, -1 * DEFAULT_REVERSE_SPEED);
+		setSpeed(DEFAULT_REVERSE_SPEED, -1 * DEFAULT_REVERSE_SPEED);
 		sleep(RETREAT_TURN_TIME);
-  } else {
-    //Turn right
-    setSpeed(-1 * DEFAULT_REVERSE_SPEED, DEFAULT_REVERSE_SPEED);
+	} else {
+		//Turn right
+		setSpeed(-1 * DEFAULT_REVERSE_SPEED, DEFAULT_REVERSE_SPEED);
 		sleep(RETREAT_TURN_TIME);
-  }
+	}
 }
 
 int randomBiasedWalk(int directionDistro) {
@@ -296,14 +296,13 @@ int randomBiasedWalk(int directionDistro) {
    * If it veers right, the odds become 60:40 in left's favor. If it veers right again,
    * the odds become 70:30. If it then veers left, the odds become 60:40, and so on.
    */
-  
-	if ((int) random[100] > (VEER_RIGHT_CHANCE + directionDistro * DISTRO_OFFSET)) {
-      setSpeed(DEFAULT_SPEED + VEER_SPEED_OFFSET, DEFAULT_SPEED);
-			return ++directionDistro;
-	 } else {
-      setSpeed(DEFAULT_SPEED, DEFAULT_SPEED + VEER_SPEED_OFFSET);
-			return --directionDistro;
-	 }
+  if ((int) random[100] > (VEER_RIGHT_CHANCE + directionDistro * DISTRO_OFFSET)) {
+  	setSpeed(DEFAULT_SPEED + VEER_SPEED_OFFSET, DEFAULT_SPEED);
+		return ++directionDistro;
+  } else {
+      	setSpeed(DEFAULT_SPEED, DEFAULT_SPEED + VEER_SPEED_OFFSET);
+		return --directionDistro;
+  }
 }
 
 task sonarTask() {
@@ -314,35 +313,36 @@ task sonarTask() {
 		if (tempDetect < MAX_DISTANCE) {
 
 			//We require a small window of time for two successive detections
-		  //to avoid erroneous obstacle collision.
+			//to avoid erroneous obstacle collision.
 			if (nSysTime - lastDetectTime < DETECT_BUFFER_TIME) {
 				distanceFrom = tempDetect;
-		  }
-		  lastDetectTime = nSysTime;
+			}
+			lastDetectTime = nSysTime;
 
-    } else {
-      //Closest object is outside of our detection range.
-      distanceFrom = OUT_OF_BOUNDS;
-    }
-  }
+    		} else {
+      			//Closest object is outside of our detection range.
+      			distanceFrom = OUT_OF_BOUNDS;
+    		}
+	 }
 }
 
 task lightTask() {
 	while (true) {
 		int color = SensorValue[colourleft];
-	  int color2 = SensorValue[colourright];
-	  displayBigTextLine(3, "Light1: %3d", color);
-	  displayBigTextLine(6, "Light2: %3d", color2);
+		int color2 = SensorValue[colourright];
+		displayBigTextLine(3, "Light1: %3d", color);
+		displayBigTextLine(6, "Light2: %3d", color2);
 
-    //Temporarily save the current averages.
-	  leftPreviousAverage = leftAverage;
-	  rightPreviousAverage = rightAverage;
-    //Calculate the new weighted average based on the previous average.
-	  leftAverage = color + NP_FACTOR * (leftPreviousAverage - color);
-	  rightAverage = color2 + NP_FACTOR * (rightPreviousAverage - color2);
-
-	  wait1Msec(LIGHT_WAIT_TIME);
-  }
+		//Temporarily save the current averages.
+		leftPreviousAverage = leftAverage;
+		rightPreviousAverage = rightAverage;
+		//Calculate the new weighted average based on the previous average.
+		leftAverage = color + NP_FACTOR * (leftPreviousAverage - color);
+		rightAverage = color2 + NP_FACTOR * (rightPreviousAverage - color2);
+		
+		wait1Msec(LIGHT_WAIT_TIME);
+		
+	}
 }
 
 void setSpeed(int velocity_left, int velocity_right) {
